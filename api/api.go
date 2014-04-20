@@ -23,7 +23,7 @@ func masterHandler(w http.ResponseWriter, r *http.Request) {
 
     if rx_solo.MatchString(r.URL.Path) {
         log.Print("Matched the solo URL")
-        solo(w, &r)
+        // solo(w, &r)
         return 
     }
 
