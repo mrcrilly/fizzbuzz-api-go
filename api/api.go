@@ -38,6 +38,9 @@ func masterHandler(w http.ResponseWriter, r *http.Request) {
             if m != nil {
                 log.Print("We have matched: ", h.regx.String())
                 
+                // JSON by default... this needs a flag
+                w.Header().Set("Content-Type", "application/json")
+                
                 req := &Request{w, r, m}
                 h.handler(req)
 

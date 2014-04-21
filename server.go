@@ -3,7 +3,6 @@ package main
 import (
     "github.com/mrcrilly/fizzbuzz-api-go/api"
     "github.com/mrcrilly/fizzbuzz-api-go/fizzbuzz"
-    "encoding/json"
     "log"
     "strconv"
     "fmt"
@@ -21,15 +20,7 @@ func soloHandler(request *api.Request) {
     }
 
     results := []string{fizzbuzz.FizzBuzz(digit)}
-    passback, err := json.Marshal(results)
-
-    if err != nil {
-        return
-    }
-
-    // This needs to be handled by the API lib
-    request.Out().Header().Set("Content-Type", "application/json")
-    fmt.Fprintf(request.Out(), string(passback))
+    fmt.Fprint(request.Out(), api.Response{"result": results})
 }
 
 func rangeHandler(request *api.Request) {
@@ -49,13 +40,7 @@ func rangeHandler(request *api.Request) {
         results = append(results, fizzbuzz.FizzBuzz(i))
     }
 
-    passback, err := json.Marshal(results)
-    
-    if err != nil {
-        return
-    }
-
-    log.Print(string(passback))
+    fmt.Fprint(request.Out(), api.Response{"result": results})
 }
 
 func main() {
