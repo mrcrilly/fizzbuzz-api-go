@@ -1,54 +1,67 @@
 package api
 
 import (
-    // "github.com/mrcrilly/fizzbuzz-api-go/fizzbuzz"
     "net/http"
     "log"
-    // "encoding/json"
     "regexp"
+    "errors"
 )
 
-var rx_index    = regexp.MustCompile(`^/$`)
-var rx_solo     = regexp.MustCompile(`^/(?P<solo>[0-9]+)[/]?$`)
-var rx_range    = regexp.MustCompile(`^/(?P<start>[0-9]+)/(?P<finish>[0-9]+)[/]?$`)
-
-func masterHandler(w http.ResponseWriter, r *http.Request) {
-    // Handle the incoming URL path and match against
-    // a known URI or return a negative 
-    
-    if rx_index.MatchString(r.URL.Path) {
-        log.Print("Matched the index URL")
-        return 
-    }
-
-    if rx_solo.MatchString(r.URL.Path) {
-        log.Print("Matched the solo URL")
-        // solo(w, &r)
-        return 
-    }
-
-    if rx_range.MatchString(r.URL.Path) {
-        log.Print("Matched range URL")
-        return 
-    }
-
-    log.Print("Matched nothing...")
+// Used internally to define a URL
+// handler resource. We have our compiled
+// regex and a function field to the function
+// the user wants to call
+type URLHandler struct {
+    regx *regexp.Regexp 
+    handler func(a *Request)
 }
 
-func initHandlers() bool {
-    // Using a function for this to handle expansion
-    // later on... 
+// Global variable of our URLHandlers
+var Handlers []URLHandler
 
-    log.Print("Setting up API handlers")
+// Adds a resource handler to the Handlers slice
+func AddResource(rx string, h func(a *Request)) (int, error) {
+    compiled := regexp.MustCompile(rx)
 
-    http.HandleFunc("/", masterHandler)
+    i := URLHandler{compiled, h}
+    Handlers = append(Handlers, i)
 
-    return true
+    return 0, nil
 }
 
-func Api() {
+// Handle the incoming URL path and match against
+// a known URI or return a negative 
+func masterHandler(w http.ResponseWriter, r *http.Request) {    
+    if len(Handlers) >= 1 {
+        for _, h := range Handlers {
+            m := h.regx.FindStringSubmatch(r.URL.Path)
+            if m != nil {
+                log.Print("We have matched: ", h.regx.String())
+                
+                req := &Request{w, r, m}
+                h.handler(req)
+
+                return
+            }
+        }
+
+        log.Print("No matches found.")
+    } else {
+        log.Print("I have no handlers. Sad face.")
+    }
+}
+
+func Api() (int, error) {
     log.Print("Starting API")
-    
-    initHandlers()
+
+    // We need some handlers before we can do anything
+    if len(Handlers) <= 0 {
+        return -1, errors.New("I need some handlers, first")
+    }
+
+    // Define the master handler and start listening
+    http.HandleFunc("/", masterHandler)
     http.ListenAndServe(":8080", nil)
+
+    return 0, nil
 }
